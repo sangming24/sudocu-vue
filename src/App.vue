@@ -11,5 +11,6 @@ import SudocuBoard from '@/views/SudocuBoard.vue'
 body {
   margin: 0;
   font-family: Arial, sans-serif;
+  overflow: hidden;
 }
 </style>

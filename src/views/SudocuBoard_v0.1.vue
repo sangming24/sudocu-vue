@@ -1,92 +1,80 @@
 <template>
-  <div class="page-wrapper" @click="selectedCell = null">
-    <div class="container">
-      <h2>논리적 스도쿠!</h2>
+  <div class="container">
+    <h2>논리적 스도쿠!</h2>
 
-      <div class="controls">
-        <select v-model="errorMode" class="mode-select">
-          <option value="possible">가능 숫자 기준</option>
-          <option value="answer">정답 기준</option>
-        </select>
-        <select v-model.number="difficulty" class="mode-select">
-          <option :value="30">쉬움</option>
-          <option :value="40">보통</option>
-          <option :value="50">어려움</option>
-          <option :value="60">극한</option>
-          <option :value="80">극한어려움</option>
-        </select>
-        <button @click="startGame">게임 시작</button>
-        <button @click="isMemoMode = !isMemoMode">
-          {{ isMemoMode ? '메모 모드 ON' : '메모 모드 OFF' }}
-        </button>
-      </div>
+    <div class="controls">
+      <select v-model="errorMode" class="mode-select">
+        <option value="possible">가능 숫자 기준</option>
+        <option value="answer">정답 기준</option>
+      </select>
+      <select v-model.number="difficulty" class="mode-select">
+        <option :value="30">쉬움</option>
+        <option :value="40">보통</option>
+        <option :value="50">어려움</option>
+        <option :value="60">극한</option>
+        <option :value="70">극한어려움</option>
+      </select>
+      <button @click="startGame">게임 시작</button>
+      <button @click="isMemoMode = !isMemoMode">
+        {{ isMemoMode ? '메모 모드 ON' : '메모 모드 OFF' }}
+      </button>
+    </div>
 
-      <div class="message">{{ message }}</div>
-      <div class="board-wrapper">
-        <table @click.stop>
-          <tr v-for="(row, i) in userBoard" :key="i">
-            <td
-              v-for="(cell, j) in row"
-              :key="j"
-              :class="cellClass(i, j)"
-              @click.stop="selectCell(i, j)"
+    <table>
+      <tr v-for="(row, i) in userBoard" :key="i">
+        <td v-for="(cell, j) in row" :key="j" :class="cellClass(i, j)">
+          <!-- 문제 숫자 -->
+          <span v-if="board[i][j] !== null" class="problem">{{ board[i][j] }}</span>
+
+          <!-- 입력 숫자 -->
+          <span v-else-if="cell.value !== null" class="number">{{ cell.value }}</span>
+
+          <!-- 메모 표시 -->
+          <div v-if="cell.value === null && board[i][j] === null" class="memo-grid">
+            <span
+              v-for="n in 9"
+              :key="n"
+              :class="{
+                memoHighlight:
+                  selectedCellNumber !== null &&
+                  n === selectedCellNumber &&
+                  cell.candidates.includes(n),
+              }"
+              >{{ cell.candidates.includes(n) ? n : '' }}</span
             >
-              <div class="cell">
-                <!-- 문제 숫자 -->
-                <span v-if="board[i][j] !== null" class="problem">{{ board[i][j] }}</span>
-
-                <!-- 입력 숫자 -->
-                <span v-else-if="cell.value !== null" class="number">{{ cell.value }}</span>
-
-                <!-- 메모 표시 -->
-                <div v-if="cell.value === null && board[i][j] === null" class="memo-grid">
-                  <span
-                    v-for="n in 9"
-                    :key="n"
-                    :class="{
-                      memoHighlight:
-                        selectedCellNumber !== null &&
-                        n === selectedCellNumber &&
-                        cell.candidates.includes(n),
-                    }"
-                    >{{ cell.candidates.includes(n) ? n : '' }}</span
-                  >
-                </div>
-
-                <!-- 실제 입력 input (투명) -->
-                <input
-                  :ref="(el) => setCellInput(el, i, j)"
-                  type="text"
-                  inputmode="none"
-                  maxlength="1"
-                  @focus="selectedCell = [i, j]"
-                  @keydown="handleKey($event, i, j)"
-                />
-              </div>
-            </td>
-          </tr>
-        </table>
-      </div>
-
-      <div class="tracker-wrapper">
-        <!-- 보드 아래 트래커 -->
-        <!-- 트래커 영역 -->
-        <div class="tracker-container">
-          <div
-            v-for="item in remainingNumbers"
-            :key="item.num"
-            class="tracker-item"
-            @mousedown.prevent
-            @click.stop="handleTrackerInput(item.num)"
-          >
-            <!-- 숫자 -->
-            <div class="tracker-number">{{ item.num }}</div>
-
-            <!-- 남은 개수 점 표시 -->
-            <div class="tracker-dots">
-              <span v-for="i in Math.min(item.count, 10)" :key="i" class="dot"></span>
-            </div>
           </div>
+
+          <!-- 실제 입력 input (투명) -->
+          <input
+            type="text"
+            inputmode="none"
+            maxlength="1"
+            @focus="selectedCell = [i, j]"
+            @blur="selectedCell = null"
+            @keydown="handleKey($event, i, j)"
+            :value="cell.value ?? board[i][j] ?? ''"
+            :readonly="board[i][j] !== null"
+          />
+        </td>
+      </tr>
+    </table>
+    <div class="message">{{ message }}</div>
+
+    <!-- 보드 아래 트래커 -->
+    <!-- 트래커 영역 -->
+    <div class="tracker-container">
+      <div
+        v-for="item in remainingNumbers"
+        :key="item.num"
+        class="tracker-item"
+        @click="handleTrackerInput(item.num)"
+      >
+        <!-- 숫자 -->
+        <div class="tracker-number">{{ item.num }}</div>
+
+        <!-- 남은 개수 점 표시 -->
+        <div class="tracker-dots">
+          <span v-for="i in Math.min(item.count, 10)" :key="i" class="dot"></span>
         </div>
       </div>
     </div>
@@ -101,13 +89,6 @@ const message = ref('')
 const selectedCell = ref(null)
 const isMemoMode = ref(false)
 const errorMode = ref('possible')
-const cellInputs = ref(Array.from({ length: 9 }, () => Array(9).fill(null)))
-
-function setCellInput(el, i, j) {
-  if (el) {
-    cellInputs.value[i][j] = el
-  }
-}
 
 const board = reactive(Array.from({ length: 9 }, () => Array(9).fill(null)))
 const solution = reactive(Array.from({ length: 9 }, () => Array(9).fill(null)))
@@ -209,17 +190,9 @@ function startGame() {
     }
 
   generatePuzzle(difficulty.value)
-  for (let j = 0; j < 9; j++) {
-    board[0][j] = null
-  }
+
   console.table(board)
   console.log('중복 체크:', checkBoardSafety(board) ? '중복 없음 ✅' : '중복 있음 ❌')
-}
-
-function selectCell(i, j) {
-  selectedCell.value = [i, j]
-
-  cellInputs.value[i][j]?.focus()
 }
 
 function handleKey(e, i, j) {
@@ -263,41 +236,6 @@ function handleKey(e, i, j) {
   }
 }
 
-function handleTrackerInput(num) {
-  if (!selectedCell.value) return
-
-  const [i, j] = selectedCell.value
-  if (board[i][j] !== null) return
-
-  const cell = userBoard[i][j]
-  if (isMemoMode.value) {
-    // ✅ 메모 모드: 후보 숫자 토글
-    const idx = cell.candidates.indexOf(num)
-    if (idx === -1) {
-      cell.candidates.push(num)
-      cell.candidates.sort((a, b) => a - b)
-    } else {
-      cell.candidates.splice(idx, 1)
-    }
-  } else {
-    // ✅ 일반 모드: 같은 숫자면 삭제 (토글)
-    if (cell.value === num) {
-      cell.value = null
-    } else {
-      cell.value = num
-      removeCandidates(i, j, num)
-    }
-  }
-
-  focusSelectedCell()
-}
-
-function focusSelectedCell() {
-  if (!selectedCell.value) return
-  const [i, j] = selectedCell.value
-  cellInputs.value[i][j]?.focus()
-}
-
 function removeCandidates(r, c, num) {
   const b = mergedBoard()
 
@@ -333,16 +271,22 @@ function removeCandidates(r, c, num) {
 }
 
 function moveNextCell(i, j, dir) {
-  let ni = i
-  let nj = j
+  let ni = i,
+    nj = j
+  for (let k = 0; k < 81; k++) {
+    if (dir === 'right') nj = (nj + 1) % 9
+    else if (dir === 'left') nj = (nj + 8) % 9
+    else if (dir === 'down') ni = (ni + 1) % 9
+    else if (dir === 'up') ni = (ni + 8) % 9
 
-  if (dir === 'right') nj = (j + 1) % 9
-  else if (dir === 'left') nj = (j + 8) % 9
-  else if (dir === 'down') ni = (i + 1) % 9
-  else if (dir === 'up') ni = (i + 8) % 9
-
-  selectedCell.value = [ni, nj]
-  focusSelectedCell()
+    const input = document.querySelector(
+      `table tr:nth-child(${ni + 1}) td:nth-child(${nj + 1}) input`,
+    )
+    if (input) {
+      input.focus()
+      return
+    }
+  }
 }
 
 const selectedCellNumber = computed(() => {
@@ -467,14 +411,6 @@ function checkBoardSafety(b) {
   word-break: keep-all;
 }
 
-.page-wrapper {
-  min-height: 100vh;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .container {
   min-width: 320px;
   min-height: 100dvh; /* 모바일 주소창 대응 */
@@ -583,9 +519,6 @@ table {
 
   border-collapse: collapse;
   border-spacing: 0;
-
-  table-layout: fixed;
-  line-height: 0;
 }
 table input {
   opacity: 0;
@@ -600,24 +533,11 @@ input {
 
 td {
   width: 11.1%;
-
+  aspect-ratio: 1 / 1;
   border: 1px solid #aaa;
   text-align: center;
   position: relative;
-  padding: 0;
-  box-sizing: border-box;
 }
-
-.cell {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 td:nth-child(3),
 td:nth-child(6) {
   border-right: 2px solid #000;
@@ -640,7 +560,7 @@ span.number {
 }
 td.error {
   background-color: #fbb !important;
-  box-shadow: inset 0 0 0 2px #d00;
+  border: 2px solid #d00;
   line-height: 1;
 }
 td.error span {
