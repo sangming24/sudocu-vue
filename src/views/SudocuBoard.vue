@@ -468,23 +468,21 @@ function checkBoardSafety(b) {
 }
 
 .page-wrapper {
-  min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .container {
   min-width: 320px;
-  min-height: 100dvh; /* 모바일 주소창 대응 */
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 16px;
   box-sizing: border-box;
   gap: 8px;
-  justify-content: flex-start;
   overflow-y: auto;
 }
 
