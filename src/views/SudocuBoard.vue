@@ -483,7 +483,6 @@ function checkBoardSafety(b) {
   padding: 16px;
   box-sizing: border-box;
   gap: 8px;
-  overflow-y: auto;
 }
 
 h2 {
