@@ -3,22 +3,29 @@ import { exec } from 'child_process'
 const commitMessage = process.argv[2] || '자동 커밋'
 
 const commands = [
+  // 1. 빌드
+  'npm run build',
+
+  // 2. git add
   'git add .',
-  `git commit -m "${commitMessage}"`,
-  'git pull --rebase origin gh-pages',
-  'git push origin gh-pages', // gh-pages에 올리려면 gh-pages로 변경
+
+  // 3. git commit
+  `git commit -m "${commitMessage}" || echo "Nothing to commit"`,
+
+  // 4. git pull (충돌 있으면 그냥 병합)
+  'git pull --rebase --autostash origin gh-pages || git pull --allow-unrelated-histories origin gh-pages',
+
+  // 5. gh-pages로 push
+  'git push origin gh-pages',
 ]
 
 function runCommand(cmd) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     exec(cmd, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`❌ Error: ${error.message}`)
-        return reject(error)
-      }
+      if (error) console.error(`❌ Error: ${error.message}`)
       if (stderr) console.error(`stderr: ${stderr}`)
       console.log(stdout)
-      resolve()
+      resolve() // 에러 있어도 멈추지 않게
     })
   })
 }
