@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "lint": "eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/",
-    "deploy": "npm run build && gh-pages -d dist"
+    "deploy": "npm run build && gh-pages -d dist",
+    "deploy:prod": "node scripts/deploy.js"
   },
   "dependencies": {
     "vue": "^3.5.25"
