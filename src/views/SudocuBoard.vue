@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h2>논리적 스도쿠!!!!!</h2>
+    <h2>논리적 스도쿠!</h2>
 
     <div class="controls">
       <select v-model="errorMode" class="mode-select">
@@ -412,15 +412,22 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
-    env(safe-area-inset-left);
-
+  padding: 16px;
   box-sizing: border-box;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+h2 {
+  margin: 4px 0;
+  font-size: clamp(18px, 4vw, 24px);
 }
 .controls {
-  margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  margin: 4px 0;
 }
 
 .controls button {
@@ -478,7 +485,9 @@ body {
   grid-auto-rows: 6px;
   gap: 2px;
   justify-content: center;
-  width: 100%;
+  width: auto;
+  max-width: 36px;
+  margin: 0 auto;
 }
 
 .dot {
@@ -493,7 +502,7 @@ table {
   height: min(92vw, 92vh);
   max-width: 420px;
   max-height: 420px;
-  margin: auto;
+  margin: 0 auto;
 }
 table input {
   opacity: 0;
@@ -530,10 +539,12 @@ td.problem {
 }
 span.number {
   color: rgb(0, 128, 255);
+  font-weight: bold;
 }
 td.error {
   background-color: #fbb !important;
   border: 2px solid #d00;
+  line-height: 1;
 }
 td.error span {
   color: red !important;
@@ -638,8 +649,10 @@ td.related {
     padding: 4px 8px;
   }
   .tracker-container {
-    margin-top: 8px;
-    gap: 4px;
+    margin-top: 4px;
+    gap: 2vw;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .tracker-number {
@@ -650,7 +663,7 @@ td.related {
 
   .tracker-dots {
     grid-auto-rows: 4px;
-    gap: 1px;
+    gap: 2px;
   }
 
   .dot {
