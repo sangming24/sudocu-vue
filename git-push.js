@@ -5,6 +5,7 @@ const commitMessage = process.argv[2] || '자동 커밋'
 const commands = [
   'git add .',
   `git commit -m "${commitMessage}"`,
+  'git pull --rebase origin gh-pages',
   'git push origin gh-pages', // gh-pages에 올리려면 gh-pages로 변경
 ]
 
