@@ -11,7 +11,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --fix --cache",
-    "format": "prettier --write --experimental-cli src/"
+    "format": "prettier --write --experimental-cli src/",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "vue": "^3.5.25"
@@ -22,6 +23,7 @@
     "@vue/eslint-config-prettier": "^10.2.0",
     "eslint": "^9.39.1",
     "eslint-plugin-vue": "~10.5.1",
+    "gh-pages": "^6.3.0",
     "globals": "^16.5.0",
     "prettier": "3.6.2",
     "vite": "^7.2.4",

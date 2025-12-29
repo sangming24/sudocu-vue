@@ -1,0 +1,661 @@
+<template>
+  <div class="container">
+    <h2>논리적 스도쿠!!!!!</h2>
+
+    <div class="controls">
+      <select v-model="errorMode" class="mode-select">
+        <option value="possible">가능 숫자 기준</option>
+        <option value="answer">정답 기준</option>
+      </select>
+      <select v-model.number="difficulty" class="mode-select">
+        <option :value="30">쉬움</option>
+        <option :value="40">보통</option>
+        <option :value="50">어려움</option>
+        <option :value="60">극한</option>
+        <option :value="70">극한어려움</option>
+      </select>
+      <button @click="startGame">게임 시작</button>
+      <button @click="isMemoMode = !isMemoMode">
+        {{ isMemoMode ? '메모 모드 ON' : '메모 모드 OFF' }}
+      </button>
+    </div>
+
+    <table>
+      <tr v-for="(row, i) in userBoard" :key="i">
+        <td v-for="(cell, j) in row" :key="j" :class="cellClass(i, j)">
+          <!-- 문제 숫자 -->
+          <span v-if="board[i][j] !== null" class="problem">{{ board[i][j] }}</span>
+
+          <!-- 입력 숫자 -->
+          <span v-else-if="cell.value !== null" class="number">{{ cell.value }}</span>
+
+          <!-- 메모 표시 -->
+          <div v-if="cell.value === null && board[i][j] === null" class="memo-grid">
+            <span
+              v-for="n in 9"
+              :key="n"
+              :class="{
+                memoHighlight:
+                  selectedCellNumber !== null &&
+                  n === selectedCellNumber &&
+                  cell.candidates.includes(n),
+              }"
+              >{{ cell.candidates.includes(n) ? n : '' }}</span
+            >
+          </div>
+
+          <!-- 실제 입력 input (투명) -->
+          <input
+            type="text"
+            inputmode="numeric"
+            maxlength="1"
+            @focus="selectedCell = [i, j]"
+            @blur="selectedCell = null"
+            @keydown="handleKey($event, i, j)"
+            :value="cell.value ?? board[i][j] ?? ''"
+            :readonly="board[i][j] !== null"
+          />
+        </td>
+      </tr>
+    </table>
+    <div class="message">{{ message }}</div>
+
+    <!-- 보드 아래 트래커 -->
+    <!-- 트래커 영역 -->
+    <div class="tracker-container">
+      <div v-for="item in remainingNumbers" :key="item.num" class="tracker-item">
+        <!-- 숫자 -->
+        <div class="tracker-number">{{ item.num }}</div>
+
+        <!-- 남은 개수 점 표시 -->
+        <div class="tracker-dots">
+          <span v-for="i in Math.min(item.count, 10)" :key="i" class="dot"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, computed, watch } from 'vue'
+
+const difficulty = ref(50)
+const message = ref('')
+const selectedCell = ref(null)
+const isMemoMode = ref(false)
+const errorMode = ref('possible')
+
+const board = reactive(Array.from({ length: 9 }, () => Array(9).fill(null)))
+const solution = reactive(Array.from({ length: 9 }, () => Array(9).fill(null)))
+const userBoard = reactive(
+  Array.from({ length: 9 }, () =>
+    Array.from({ length: 9 }, () => ({ value: null, candidates: [] })),
+  ),
+)
+
+function mergedBoard() {
+  return board.map((r, i) => r.map((c, j) => c ?? userBoard[i][j].value))
+}
+
+function shuffle(array) {
+  const a = [...array]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+function isSafe(b, r, c, n) {
+  for (let i = 0; i < 9; i++) if (b[r][i] === n || b[i][c] === n) return false
+  const sr = Math.floor(r / 3) * 3
+  const sc = Math.floor(c / 3) * 3
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (b[sr + i][sc + j] === n) return false
+  return true
+}
+
+function solveRandom(b) {
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      if (b[r][c] === null) {
+        const nums = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9])
+        for (let n of nums) {
+          if (isSafe(b, r, c, n)) {
+            b[r][c] = n
+            if (solveRandom(b)) return true
+            b[r][c] = null
+          }
+        }
+        return false
+      }
+    }
+  }
+  return true
+}
+
+function countSolutions(b, limit = 2) {
+  let count = 0
+  function backtrack() {
+    if (count >= limit) return
+    for (let r = 0; r < 9; r++)
+      for (let c = 0; c < 9; c++)
+        if (b[r][c] === null) {
+          for (let n = 1; n <= 9; n++) {
+            if (isSafe(b, r, c, n)) {
+              b[r][c] = n
+              backtrack()
+              b[r][c] = null
+            }
+          }
+          return
+        }
+    count++
+  }
+  backtrack()
+  return count
+}
+
+function generatePuzzle(empty) {
+  solveRandom(board)
+
+  // solution 저장
+  for (let i = 0; i < 9; i++) for (let j = 0; j < 9; j++) solution[i][j] = board[i][j]
+
+  const cells = shuffle([...Array(81).keys()])
+  for (let idx of cells) {
+    if (empty <= 0) break
+    const r = Math.floor(idx / 9)
+    const c = idx % 9
+    const backup = board[r][c]
+    board[r][c] = null
+    const copy = mergedBoard().map((row) => [...row])
+    if (countSolutions(copy) !== 1) board[r][c] = backup
+    else empty--
+  }
+}
+
+function startGame() {
+  message.value = ''
+  selectedCell.value = null
+
+  for (let i = 0; i < 9; i++)
+    for (let j = 0; j < 9; j++) {
+      board[i][j] = null
+      userBoard[i][j] = { value: null, candidates: [] }
+    }
+
+  generatePuzzle(difficulty.value)
+
+  console.table(board)
+  console.log('중복 체크:', checkBoardSafety(board) ? '중복 없음 ✅' : '중복 있음 ❌')
+}
+
+function handleKey(e, i, j) {
+  const key = e.key
+  const cell = userBoard[i][j]
+
+  if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(key)) {
+    moveNextCell(i, j, key.replace('Arrow', '').toLowerCase())
+    e.preventDefault()
+    return
+  }
+
+  // 문제칸이면 나머지 키 입력 무시
+  if (board[i][j] !== null) {
+    e.preventDefault()
+    return
+  }
+
+  // 지우기 지원
+  if (key === 'Backspace' || key === 'Delete') {
+    cell.value = null
+    // cell.candidates = [];
+    return
+  }
+
+  if (!/^[1-9]$/.test(key)) return
+  const num = Number(key)
+
+  if (isMemoMode.value) {
+    // 유효성 체크: 해당 위치에 넣어도 되는 숫자인지 확인
+    if (!isSafeFull(mergedBoard(), i, j, num)) return // 불가능하면 그냥 무시
+
+    const idx = cell.candidates.indexOf(num)
+    if (idx === -1) cell.candidates.push(num)
+    else cell.candidates.splice(idx, 1)
+    cell.candidates.sort((a, b) => a - b)
+  } else {
+    cell.value = num
+    // cell.candidates = [];	// 보존 후 숫자 삭제 시 재노출
+    removeCandidates(i, j, num)
+  }
+}
+
+function removeCandidates(r, c, num) {
+  const b = mergedBoard()
+
+  // 입력된 숫자가 정상 아닐 경우 → 메모 건드리지 않음
+  let canRemove = false
+
+  if (errorMode.value === 'possible') {
+    canRemove = isSafeFull(b, r, c, num)
+  } else if (errorMode.value === 'answer') {
+    // solution 기준으로 체크
+    canRemove = solution[r][c] === num
+  }
+  if (!canRemove) return
+
+  // 같은 행 / 열
+  for (let i = 0; i < 9; i++) {
+    if (i !== c) userBoard[r][i].candidates = userBoard[r][i].candidates.filter((n) => n !== num)
+
+    if (i !== r) userBoard[i][c].candidates = userBoard[i][c].candidates.filter((n) => n !== num)
+  }
+
+  // 같은 3x3 박스
+  const sr = Math.floor(r / 3) * 3
+  const sc = Math.floor(c / 3) * 3
+  for (let i = 0; i < 3; i++)
+    for (let j = 0; j < 3; j++) {
+      const rr = sr + i
+      const cc = sc + j
+      if (rr !== r || cc !== c) {
+        userBoard[rr][cc].candidates = userBoard[rr][cc].candidates.filter((n) => n !== num)
+      }
+    }
+}
+
+function moveNextCell(i, j, dir) {
+  let ni = i,
+    nj = j
+  for (let k = 0; k < 81; k++) {
+    if (dir === 'right') nj = (nj + 1) % 9
+    else if (dir === 'left') nj = (nj + 8) % 9
+    else if (dir === 'down') ni = (ni + 1) % 9
+    else if (dir === 'up') ni = (ni + 8) % 9
+
+    const input = document.querySelector(
+      `table tr:nth-child(${ni + 1}) td:nth-child(${nj + 1}) input`,
+    )
+    if (input) {
+      input.focus()
+      return
+    }
+  }
+}
+
+const selectedCellNumber = computed(() => {
+  if (!selectedCell.value) return null
+
+  const [i, j] = selectedCell.value
+  return userBoard[i][j].value || board[i][j]
+})
+
+function cellClass(i, j) {
+  const cell = userBoard[i][j]
+  const b = mergedBoard()
+
+  // 선택된 숫자가 들어있는 모든 위치
+  const selNum = selectedCellNumber.value
+  const [si, sj] = selectedCell.value || []
+
+  const related =
+    selNum !== null &&
+    selectedCell.value &&
+    (i === si ||
+      j === sj ||
+      (Math.floor(i / 3) === Math.floor(si / 3) && Math.floor(j / 3) === Math.floor(sj / 3)))
+
+  // 에러 판단
+  let isError = false
+  if (cell.value !== null) {
+    if (errorMode.value === 'possible') {
+      // 현재 셀 제외하고 가능한지 체크
+      isError = !isSafeFull(b, i, j, cell.value)
+    } else if (errorMode.value === 'answer') {
+      // solution과 비교
+      isError = solution[i][j] !== cell.value
+    }
+  }
+
+  return {
+    problem: board[i][j] !== null,
+    selected: selectedCell.value?.[0] === i && selectedCell.value?.[1] === j,
+    error: isError,
+    highlight: selNum !== null && (cell.value === selNum || board[i][j] === selNum),
+    related,
+  }
+}
+
+const remainingNumbers = computed(() => {
+  const b = mergedBoard()
+  return Array.from({ length: 9 }, (_, i) => i + 1)
+    .map((num) => {
+      // solution 기준으로 아직 입력되지 않은 개수
+      let count = 0
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (solution[r][c] === num && b[r][c] !== num) count++
+        }
+      }
+      return { num, count }
+    })
+    .filter((x) => x.count > 0)
+})
+
+watch(
+  userBoard,
+  () => {
+    const b = mergedBoard()
+    for (let i = 0; i < 9; i++)
+      for (let j = 0; j < 9; j++) if (!b[i][j] || !isSafeFull(b, i, j, b[i][j])) return
+    // 완성 시
+    message.value = '🎉 완성!'
+  },
+  { deep: true },
+)
+
+function isSafeFull(b, r, c, n) {
+  for (let i = 0; i < 9; i++) if (i !== c && b[r][i] === n) return false
+  for (let i = 0; i < 9; i++) if (i !== r && b[i][c] === n) return false
+  const sr = Math.floor(r / 3) * 3
+  const sc = Math.floor(c / 3) * 3
+  for (let i = 0; i < 3; i++)
+    for (let j = 0; j < 3; j++)
+      if ((sr + i !== r || sc + j !== c) && b[sr + i][sc + j] === n) return false
+  return true
+}
+
+function checkBoardSafety(b) {
+  for (let r = 0; r < 9; r++) {
+    const seen = new Set()
+    for (let c = 0; c < 9; c++) {
+      const v = b[r][c]
+      if (v === null) continue
+      if (seen.has(v)) return false
+      seen.add(v)
+    }
+  }
+  for (let c = 0; c < 9; c++) {
+    const seen = new Set()
+    for (let r = 0; r < 9; r++) {
+      const v = b[r][c]
+      if (v === null) continue
+      if (seen.has(v)) return false
+      seen.add(v)
+    }
+  }
+  for (let br = 0; br < 3; br++) {
+    for (let bc = 0; bc < 3; bc++) {
+      const seen = new Set()
+      for (let i = 0; i < 3; i++)
+        for (let j = 0; j < 3; j++) {
+          const v = b[br * 3 + i][bc * 3 + j]
+          if (v === null) continue
+          if (seen.has(v)) return false
+          seen.add(v)
+        }
+    }
+  }
+  return true
+}
+</script>
+
+<style scoped>
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+.container {
+  min-height: 100dvh; /* 모바일 주소창 대응 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+
+  box-sizing: border-box;
+}
+.controls {
+  margin-bottom: 10px;
+}
+
+.controls button {
+  margin-left: 5px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid #007bff;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.controls button:hover {
+  background-color: #0056b3;
+}
+
+.tracker-container {
+  display: flex;
+  justify-content: center;
+  gap: 1vw; /* 화면 너비에 비례해서 간격 */
+  margin-top: 20px;
+  flex-wrap: wrap; /* 화면 좁으면 줄바꿈 */
+  max-width: 100%; /* 화면을 넘지 않도록 */
+  overflow: hidden;
+}
+
+.tracker-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1 1 auto; /* 자동으로 줄어듬 */
+  min-width: 30px; /* 너무 작아지지 않게 최소값 */
+}
+
+.tracker-number {
+  width: 6vw; /* 화면에 비례 */
+  height: 6vw;
+  max-width: 36px; /* 기존 최대 크기 유지 */
+  max-height: 36px;
+  background-color: #d0e7ff;
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 4px;
+  margin-bottom: 0.5vw;
+  user-select: none;
+}
+
+.tracker-dots {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-auto-rows: 6px;
+  gap: 2px;
+  justify-content: center;
+  width: 100%;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  background-color: #007bff;
+  border-radius: 50%;
+}
+
+table {
+  width: min(92vw, 92vh);
+  height: min(92vw, 92vh);
+  max-width: 420px;
+  max-height: 420px;
+  margin: auto;
+}
+table input {
+  opacity: 0;
+  pointer-events: auto;
+}
+
+td span.number,
+td span.problem,
+input {
+  font-size: clamp(12px, 4vw, 18px);
+}
+
+td {
+  width: 11.1%;
+  aspect-ratio: 1 / 1;
+  border: 1px solid #333;
+  text-align: center;
+  position: relative;
+}
+td:nth-child(3),
+td:nth-child(6) {
+  border-right: 3px solid #000;
+}
+tr:nth-child(3) td,
+tr:nth-child(6) td {
+  border-bottom: 3px solid #000;
+}
+
+td.selected {
+  background-color: #e8f0ff;
+}
+td.problem {
+  font-weight: bold;
+}
+span.number {
+  color: rgb(0, 128, 255);
+}
+td.error {
+  background-color: #fbb !important;
+  border: 2px solid #d00;
+}
+td.error span {
+  color: red !important;
+}
+
+input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  text-align: center;
+  background: transparent;
+  color: transparent; /* 텍스트 안 보이게 */
+  caret-color: transparent; /* 커서 안 보이게 */
+  position: absolute; /* td 위에 겹치게 */
+  top: 0;
+  left: 0;
+}
+
+.memo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  font-size: clamp(6px, 2.5vw, 12px);
+  line-height: 1em;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+.memo-grid span {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.message {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+/* 트래커 클릭시 같은 숫자 색변경 */
+td.highlight {
+  background-color: #def;
+}
+
+/* 트래커 클릭시 같은 숫자(메모) 색변경 */
+span.memoHighlight {
+  background-color: #def;
+  font-weight: bold;
+}
+
+/* 선택된 숫자 영역 표시 */
+td.related {
+  background-color: #f5f8ff;
+}
+
+/* 숫자가 없으면 메모 보임 */
+/* td > span + .memo-grid {
+	display: grid;
+} */
+
+/* 숫자가 입력되면 메모 숨김 */
+/* td > span:not(:empty) + .memo-grid {
+	display: none;
+} */
+
+/* 숫자가 입력되면 메모 숨김 */
+/* td input[value]:not([value='']) + .memo-grid {
+	opacity: 0;
+} */
+.mode-select {
+  margin: 0 5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background-color: #f8f9fa;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 3px rgba(0, 123, 255, 0.5);
+}
+
+@media (max-width: 600px) {
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .mode-select,
+  .controls button {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+  .tracker-container {
+    margin-top: 8px;
+    gap: 4px;
+  }
+
+  .tracker-number {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .tracker-dots {
+    grid-auto-rows: 4px;
+    gap: 1px;
+  }
+
+  .dot {
+    width: 4px;
+    height: 4px;
+  }
+}
+</style>
