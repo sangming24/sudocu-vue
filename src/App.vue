@@ -16,5 +16,6 @@ body {
   overflow-y: auto; /* ✅ 스크롤은 body */
   -webkit-overflow-scrolling: touch;
   font-family: Arial, sans-serif;
+  background-color: #fff;
 }
 </style>
