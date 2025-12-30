@@ -477,10 +477,12 @@ function checkBoardSafety(b) {
 
 .container {
   min-width: 320px;
+  min-height: auto;
+
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px;
+  padding: 12px 4px;
   box-sizing: border-box;
   gap: 8px;
 }
