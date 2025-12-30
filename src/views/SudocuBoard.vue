@@ -13,7 +13,7 @@
           <option :value="40">보통</option>
           <option :value="50">어려움</option>
           <option :value="60">극한</option>
-          <option :value="80">극한어려움</option>
+          <option :value="70">극한어려움</option>
         </select>
         <button @click="startGame">게임 시작</button>
         <button @click="isMemoMode = !isMemoMode">
@@ -209,9 +209,7 @@ function startGame() {
     }
 
   generatePuzzle(difficulty.value)
-  for (let j = 0; j < 9; j++) {
-    board[0][j] = null
-  }
+
   console.table(board)
   console.log('중복 체크:', checkBoardSafety(board) ? '중복 없음 ✅' : '중복 있음 ❌')
 }
@@ -570,7 +568,6 @@ h2 {
 
 table {
   width: min(92vw, 92vh);
-  aspect-ratio: 1 / 1;
 
   min-width: 280px;
   min-height: 280px;
