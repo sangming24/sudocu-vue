@@ -533,6 +533,10 @@ h2 {
   display: flex;
   flex-direction: column;
   align-items: center;
+
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px;
 }
 
 .tracker-number {
@@ -756,9 +760,9 @@ td.related {
   }
 
   .tracker-number {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
   }
 
   .tracker-dots {
