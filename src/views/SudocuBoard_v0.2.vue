@@ -4,6 +4,10 @@
       <h2>논리적 스도쿠!</h2>
 
       <div class="controls">
+        <select v-model="errorMode" class="mode-select">
+          <option value="possible">가능 숫자 기준</option>
+          <option value="answer">정답 기준</option>
+        </select>
         <select v-model.number="difficulty" class="mode-select">
           <option :value="30">쉬움</option>
           <option :value="40">보통</option>
@@ -14,7 +18,8 @@
         <button @click="startGame">게임 시작</button>
       </div>
 
-      <div class="board-wrapper" :class="{ locked: isComplete }">
+      <div class="message">{{ message }}</div>
+      <div class="board-wrapper">
         <table @click.stop>
           <tr v-for="(row, i) in userBoard" :key="i">
             <td
@@ -78,7 +83,6 @@
             v-for="item in remainingNumbers"
             :key="item.num"
             class="tracker-item"
-            :class="{ used: item.count === 0 }"
             @mousedown.prevent
             @click.stop="handleTrackerInput(item.num)"
           >
@@ -92,29 +96,19 @@
           </div>
         </div>
       </div>
-
-      <div v-if="isComplete" class="success-overlay">
-        <div class="confetti">
-          <span v-for="n in 24" :key="n"></span>
-        </div>
-        <div class="success-box">
-          <h2>🎉 완료!</h2>
-          <p>스도쿠를 완성했어요</p>
-          <button @click="startGame">새 게임</button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, nextTick } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 
 const difficulty = ref(50)
+const message = ref('')
 const selectedCell = ref(null)
 const isMemoMode = ref(false)
+const errorMode = ref('possible')
 const cellInputs = ref(Array.from({ length: 9 }, () => Array(9).fill(null)))
-const isComplete = ref(false)
 
 function setCellInput(el, i, j) {
   if (el) {
@@ -212,9 +206,8 @@ function generatePuzzle(empty) {
 }
 
 function startGame() {
+  message.value = ''
   selectedCell.value = null
-  isComplete.value = false
-  isMemoMode.value = false
 
   for (let i = 0; i < 9; i++)
     for (let j = 0; j < 9; j++) {
@@ -262,7 +255,7 @@ function handleKey(e, i, j) {
 
   if (isMemoMode.value) {
     // 유효성 체크: 해당 위치에 넣어도 되는 숫자인지 확인
-    if (!isPossibleByBoard(mergedBoard(), i, j, num)) return // 불가능하면 그냥 무시
+    if (!isSafeFull(mergedBoard(), i, j, num)) return // 불가능하면 그냥 무시
 
     const idx = cell.candidates.indexOf(num)
     if (idx === -1) cell.candidates.push(num)
@@ -311,8 +304,18 @@ function focusSelectedCell() {
 }
 
 function removeCandidates(r, c, num) {
-  // solution 기준으로 체크
-  if (solution[r][c] !== num) return
+  const b = mergedBoard()
+
+  // 입력된 숫자가 정상 아닐 경우 → 메모 건드리지 않음
+  let canRemove = false
+
+  if (errorMode.value === 'possible') {
+    canRemove = isSafeFull(b, r, c, num)
+  } else if (errorMode.value === 'answer') {
+    // solution 기준으로 체크
+    canRemove = solution[r][c] === num
+  }
+  if (!canRemove) return
 
   // 같은 행 / 열
   for (let i = 0; i < 9; i++) {
@@ -356,6 +359,7 @@ const selectedCellNumber = computed(() => {
 
 function cellClass(i, j) {
   const cell = userBoard[i][j]
+  const b = mergedBoard()
 
   // 선택된 숫자가 들어있는 모든 위치
   const selNum = selectedCellNumber.value
@@ -371,8 +375,13 @@ function cellClass(i, j) {
   // 에러 판단
   let isError = false
   if (cell.value !== null) {
-    // solution과 비교
-    isError = solution[i][j] !== cell.value
+    if (errorMode.value === 'possible') {
+      // 현재 셀 제외하고 가능한지 체크
+      isError = !isSafeFull(b, i, j, cell.value)
+    } else if (errorMode.value === 'answer') {
+      // solution과 비교
+      isError = solution[i][j] !== cell.value
+    }
   }
 
   return {
@@ -386,43 +395,33 @@ function cellClass(i, j) {
 
 const remainingNumbers = computed(() => {
   const b = mergedBoard()
-  return Array.from({ length: 9 }, (_, i) => i + 1).map((num) => {
-    // solution 기준으로 아직 입력되지 않은 개수
-    let count = 0
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        if (solution[r][c] === num && b[r][c] !== num) count++
+  return Array.from({ length: 9 }, (_, i) => i + 1)
+    .map((num) => {
+      // solution 기준으로 아직 입력되지 않은 개수
+      let count = 0
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (solution[r][c] === num && b[r][c] !== num) count++
+        }
       }
-    }
-    return { num, count }
-  })
-})
-
-function initConfetti() {
-  nextTick(() => {
-    document.querySelectorAll('.confetti span').forEach((el, i) => {
-      el.style.setProperty('--x', Math.random())
-      el.style.setProperty('--i', i)
-      el.style.setProperty('--h', Math.floor(Math.random() * 360))
+      return { num, count }
     })
-  })
-}
+    .filter((x) => x.count > 0)
+})
 
 watch(
   userBoard,
   () => {
     const b = mergedBoard()
-    for (let i = 0; i < 9; i++) for (let j = 0; j < 9; j++) if (b[i][j] !== solution[i][j]) return
+    for (let i = 0; i < 9; i++)
+      for (let j = 0; j < 9; j++) if (!b[i][j] || !isSafeFull(b, i, j, b[i][j])) return
     // 완성 시
-    if (!isComplete.value) {
-      isComplete.value = true
-      initConfetti()
-    }
+    message.value = '🎉 완성!'
   },
   { deep: true },
 )
 
-function isPossibleByBoard(b, r, c, n) {
+function isSafeFull(b, r, c, n) {
   for (let i = 0; i < 9; i++) if (i !== c && b[r][i] === n) return false
   for (let i = 0; i < 9; i++) if (i !== r && b[i][c] === n) return false
   const sr = Math.floor(r / 3) * 3
@@ -588,12 +587,6 @@ h2 {
   touch-action: manipulation;
 }
 
-/* ===== 트래커 숫자 고정 + 소진 처리 ===== */
-.tracker-item.used {
-  visibility: hidden; /* 공간 유지 */
-  pointer-events: none; /* 클릭 방지 */
-}
-
 .tracker-dots {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -614,11 +607,6 @@ h2 {
 
 .board-wrapper {
   margin-bottom: 12px; /* 8~16px 사이 취향 */
-}
-
-.locked {
-  pointer-events: none;
-  opacity: 0.6;
 }
 
 table {
@@ -736,6 +724,11 @@ input:focus {
   white-space: nowrap;
 }
 
+.message {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
 /* 트래커 클릭시 같은 숫자 색변경 */
 td.highlight {
   background-color: #c1dcff;
@@ -782,82 +775,6 @@ td.related {
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 3px rgba(0, 123, 255, 0.5);
-}
-
-.success-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.success-box {
-  background: #fff;
-  padding: 24px 28px;
-  border-radius: 14px;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  animation: pop 0.35s ease-out;
-}
-
-.success-box h2 {
-  margin-bottom: 8px;
-}
-
-.success-box button {
-  margin-top: 12px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: none;
-  background: #007bff;
-  color: white;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-@keyframes pop {
-  from {
-    transform: scale(0.85);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* ===== 가벼운 컨페티 효과 ===== */
-.confetti {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.confetti span {
-  position: absolute;
-  top: -10%;
-  width: 8px;
-  height: 8px;
-  background-color: hsl(var(--h), 80%, 60%);
-  animation: confetti-fall 1.8s linear forwards;
-}
-
-/* 랜덤 위치 & 색상 */
-.confetti span:nth-child(n) {
-  left: calc(100% * var(--x));
-  animation-delay: calc(0.02s * var(--i));
-}
-
-/* 낙하 애니메이션 */
-@keyframes confetti-fall {
-  to {
-    transform: translateY(120vh) rotate(360deg);
-    opacity: 0;
-  }
 }
 
 @media (max-width: 400px) {
