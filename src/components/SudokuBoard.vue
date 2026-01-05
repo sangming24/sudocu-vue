@@ -110,9 +110,8 @@
 
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue'
-import { checkBoardSafety, cloneBoard, isPossibleByBoard } from '@/sudoku/utils'
+import { checkBoardSafety, isPossibleByBoard } from '@/sudoku/utils'
 import { useSudoku } from '@/composables/useSudoku'
-import { logicalSolve } from '@/sudoku/solver'
 import { useSudokuWorker } from '@/composables/useSudokuWorker'
 
 const difficulty = ref('medium')
