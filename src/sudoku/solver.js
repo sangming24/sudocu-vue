@@ -292,8 +292,28 @@ export function logicalSolve(board) {
 
   const solved = sb.every((row) => row.every((c) => c.value))
 
+  let stalled = false
+  let stallReason = null
+
+  if (!solved) {
+    const hasEmpty = sb.some((row) => row.some((c) => !c.value))
+    const hasZeroCandidate = sb.some((row) =>
+      row.some((c) => !c.value && c.candidates.length === 0),
+    )
+
+    if (hasZeroCandidate) {
+      stalled = true
+      stallReason = 'contradiction'
+    } else if (hasEmpty) {
+      stalled = true
+      stallReason = 'noMoreLogicalMoves'
+    }
+  }
+
   return {
     solved,
+    stalled,
+    stallReason,
     techniquesUsed,
     maxTechnique,
   }

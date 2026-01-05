@@ -122,7 +122,13 @@ const isComplete = ref(false)
 const cellInputs = ref(Array.from({ length: 9 }, () => Array(9).fill(null)))
 
 const sudoku = useSudoku()
-const { isGenerating } = useSudokuWorker()
+const { generate, isGenerating } = useSudokuWorker()
+
+function setCellInput(el, i, j) {
+  if (el) {
+    cellInputs.value[i][j] = el
+  }
+}
 
 const board = reactive(Array.from({ length: 9 }, () => Array(9).fill(null)))
 const solution = reactive(Array.from({ length: 9 }, () => Array(9).fill(null)))
@@ -131,45 +137,6 @@ const userBoard = reactive(
     Array.from({ length: 9 }, () => ({ value: null, candidates: [] })),
   ),
 )
-
-let worker = null
-
-function initWorker() {
-  if (worker) worker.terminate()
-
-  worker = new Worker(new URL('../workers/sudokuWorker.js', import.meta.url), {
-    type: 'module',
-  })
-
-  worker.onmessage = (e) => {
-    const { type, result } = e.data
-
-    if (type === 'RESULT') {
-      handleWorkerResult(result)
-    }
-  }
-}
-
-function handleWorkerResult(result) {
-  if (!result) {
-    console.warn('퍼즐 생성 실패')
-    return
-  }
-
-  const { puzzle, solution: solved } = result
-
-  for (let i = 0; i < 9; i++)
-    for (let j = 0; j < 9; j++) {
-      board[i][j] = puzzle[i][j]
-      solution[i][j] = solved[i][j]
-    }
-}
-
-function setCellInput(el, i, j) {
-  if (el) {
-    cellInputs.value[i][j] = el
-  }
-}
 
 function selectCell(i, j) {
   selectedCell.value = [i, j]
@@ -190,15 +157,25 @@ async function startGame() {
       userBoard[i][j] = { value: null, candidates: [] }
     }
 
-  initWorker()
+  const result = await generate(difficulty.value)
 
-  worker.postMessage({
-    type: 'GENERATE',
-    difficulty: difficulty.value,
-  })
+  if (!result || !result.puzzle || !result.solution) {
+    console.error('퍼즐 생성 실패', result)
+    return
+  }
+
+  const { puzzle, solution: solved } = result
+
+  for (let i = 0; i < 9; i++)
+    for (let j = 0; j < 9; j++) {
+      board[i][j] = puzzle[i][j]
+      solution[i][j] = solved[i][j]
+    }
 
   console.table(board)
   console.log('중복 체크:', checkBoardSafety(board) ? '중복 없음 ✅' : '중복 있음 ❌')
+  const testBoard = cloneBoard(board)
+  console.log(logicalSolve(testBoard))
 }
 
 function handleKey(e, i, j) {

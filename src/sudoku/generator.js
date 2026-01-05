@@ -71,7 +71,6 @@ function countSolutions(board, limit = 2) {
 
 function generatePuzzle({ board, solution, empty }) {
   solveRandom(board)
-  console.log('generatePuzzle')
   // solution 저장
   for (let i = 0; i < 9; i++) for (let j = 0; j < 9; j++) solution[i][j] = board[i][j]
 
@@ -79,7 +78,6 @@ function generatePuzzle({ board, solution, empty }) {
   let attempts = 0
 
   for (let idx of cells) {
-    console.log('generatePuzzle for', attempts, empty)
     if (empty <= 0 || attempts > 100) break
     attempts++
 
@@ -103,24 +101,27 @@ function evaluatePuzzleDifficulty(puzzle) {
 }
 
 function matchDifficulty(result, difficulty) {
-  if (!result.solved) return false
+  const t = result.techniquesUsed
 
-  const max = result.maxTechnique
+  if (difficulty === 'expert') {
+    // C단계 퍼즐 허용
+    return result.stalled && result.stallReason === 'noMoreLogicalMoves'
+  }
+
+  if (!result.solved || result.stalled) return false
 
   switch (difficulty) {
     case 'easy':
-      // NakedSingle만으로 해결
-      return max === 'NakedSingle'
+      return t.NakedSingle && !t.HiddenSingle && !t.NakedPair && !t.Pointing && !t.Claiming
 
     case 'medium':
-      // HiddenSingle까지 허용
-      return max === 'HiddenSingle'
+      return t.HiddenSingle && !t.NakedPair && !t.Pointing && !t.Claiming
 
     case 'hard':
-      return max === 'NakedPair' || max === 'Pointing'
+      return t.NakedPair || t.Pointing
 
     case 'expert':
-      return max === 'Claiming'
+      return t.Claiming || (result.stalled && !result.solved)
 
     default:
       return false
@@ -130,9 +131,7 @@ function matchDifficulty(result, difficulty) {
 function generateByLogic(difficulty) {
   let tries = 0
 
-  console.log('generateByLogic', tries)
   while (tries < 200) {
-    console.log('while', tries)
     tries++
 
     // 1. 보드 초기화
@@ -147,17 +146,75 @@ function generateByLogic(difficulty) {
     const result = evaluatePuzzleDifficulty(board)
 
     // 3. 난이도 조건 검사
-    if (matchDifficulty(result, difficulty)) {
-      console.log('퍼즐 생성 성공', result)
-      return { puzzle: board, solution }
-    }
+    if (difficulty === 'expert') {
+      if (result.stalled && !result.solved) {
+        const analysis = analyzeOneGuess(board)
 
-    console.log('tries', tries)
+        if (analysis.solved) {
+          console.log('C단계 퍼즐 확정', analysis)
+          return { puzzle: board, solution }
+        }
+      }
+    } else {
+      if (matchDifficulty(result, difficulty)) {
+        console.log('퍼즐 생성 성공', result)
+        return { puzzle: board, solution }
+      }
+    }
+    console.log('퍼즐 생성 실패', result)
   }
 
   if (tries >= 200) {
     console.warn('퍼즐 생성 실패 → fallback')
     return null
+  }
+}
+
+function analyzeOneGuess(board) {
+  let guessCount = 0
+  let maxCandidates = 0
+
+  function tryGuess(b) {
+    const result = logicalSolve(b)
+
+    if (result.solved) return true
+    if (!result.stalled) return false
+
+    // 후보가 가장 적은 셀 찾기
+    let target = null
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        if (b[r][c] === null) {
+          const candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((n) => isSafe(b, r, c, n))
+          if (!target || candidates.length < target.candidates.length) {
+            target = { r, c, candidates }
+          }
+        }
+      }
+    }
+
+    if (!target) return false
+
+    maxCandidates = Math.max(maxCandidates, target.candidates.length)
+
+    for (let n of target.candidates) {
+      guessCount++
+      const copy = cloneBoard(b)
+      copy[target.r][target.c] = n
+      if (logicalSolve(copy).solved) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  const solved = tryGuess(cloneBoard(board))
+
+  return {
+    solved,
+    guessCount,
+    maxCandidates,
   }
 }
 
