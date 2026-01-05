@@ -1,9 +1,9 @@
 <script setup>
-import SudocuBoard from '@/views/SudocuBoard.vue'
+import SudokuBoard from '@/components/SudokuBoard.vue'
 </script>
 
 <template>
-  <SudocuBoard />
+  <SudokuBoard />
 </template>
 
 <style>
