@@ -3,21 +3,6 @@
 import { shuffle, cloneBoard, isSafe } from './utils'
 import { logicalSolve } from './solver'
 
-function getEmptyCountByDifficulty(difficulty) {
-  switch (difficulty) {
-    case 'easy':
-      return 30
-    case 'medium':
-      return 40
-    case 'hard':
-      return 50
-    case 'expert':
-      return 60
-    default:
-      return 40
-  }
-}
-
 function solveRandom(board) {
   for (let r = 0; r < 9; r++) {
     for (let c = 0; c < 9; c++) {
@@ -69,28 +54,25 @@ function countSolutions(board, limit = 2) {
   return count
 }
 
-function generatePuzzle({ board, solution, empty }) {
+function generatePuzzle({ board, solution }) {
   solveRandom(board)
+
   // solution 저장
   for (let i = 0; i < 9; i++) for (let j = 0; j < 9; j++) solution[i][j] = board[i][j]
 
   const cells = shuffle([...Array(81).keys()])
-  let attempts = 0
 
   for (let idx of cells) {
-    if (empty <= 0 || attempts > 100) break
-    attempts++
-
     const r = Math.floor(idx / 9)
     const c = idx % 9
-
     const backup = board[r][c]
+
     board[r][c] = null
 
+    // 유일 해답 유지
     if (countSolutions(board) !== 1) {
       board[r][c] = backup
-    } else {
-      empty--
+      continue
     }
   }
 }
@@ -101,28 +83,20 @@ function evaluatePuzzleDifficulty(puzzle) {
 }
 
 function matchDifficulty(result, difficulty) {
-  const t = result.techniquesUsed
+  // 논리로 안 풀리면 재생성
+  if (!result.solved) return false
 
-  if (difficulty === 'expert') {
-    // C단계 퍼즐 허용
-    return result.stalled && result.stallReason === 'noMoreLogicalMoves'
-  }
-
-  if (!result.solved || result.stalled) return false
+  const s = result.score
 
   switch (difficulty) {
     case 'easy':
-      return t.NakedSingle && !t.HiddenSingle && !t.NakedPair && !t.Pointing && !t.Claiming
-
+      return s < 1.5
     case 'medium':
-      return t.HiddenSingle && !t.NakedPair && !t.Pointing && !t.Claiming
-
+      return s >= 1.5 && s < 3.5
     case 'hard':
-      return t.NakedPair || t.Pointing
-
-    case 'expert':
-      return t.Claiming || (result.stalled && !result.solved)
-
+      return s >= 3.5 && s < 6
+    case 'veryHard':
+      return s >= 6
     default:
       return false
   }
@@ -139,82 +113,23 @@ function generateByLogic(difficulty) {
     const solution = Array.from({ length: 9 }, () => Array(9).fill(null))
 
     // 2. 기존 퍼즐 생성
-    const emptyCount = getEmptyCountByDifficulty(difficulty)
-    generatePuzzle({ board, solution, empty: emptyCount })
+    generatePuzzle({ board, solution })
 
-    // 2. Solver로 난이도 평가
+    // 3. Solver로 난이도 평가
     const result = evaluatePuzzleDifficulty(board)
 
-    // 3. 난이도 조건 검사
-    if (difficulty === 'expert') {
-      if (result.stalled && !result.solved) {
-        const analysis = analyzeOneGuess(board)
-
-        if (analysis.solved) {
-          console.log('C단계 퍼즐 확정', analysis)
-          return { puzzle: board, solution }
-        }
-      }
+    // 4. 난이도 조건 검사
+    if (matchDifficulty(result, difficulty)) {
+      console.log('퍼즐 생성 성공', result)
+      return { puzzle: board, solution }
     } else {
-      if (matchDifficulty(result, difficulty)) {
-        console.log('퍼즐 생성 성공', result)
-        return { puzzle: board, solution }
-      }
+      console.log('퍼즐 생성 실패 난이도 조건 미달', result)
     }
-    console.log('퍼즐 생성 실패', result)
   }
 
   if (tries >= 200) {
-    console.warn('퍼즐 생성 실패 → fallback')
+    console.log('퍼즐 생성 실패 → fallback')
     return null
-  }
-}
-
-function analyzeOneGuess(board) {
-  let guessCount = 0
-  let maxCandidates = 0
-
-  function tryGuess(b) {
-    const result = logicalSolve(b)
-
-    if (result.solved) return true
-    if (!result.stalled) return false
-
-    // 후보가 가장 적은 셀 찾기
-    let target = null
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        if (b[r][c] === null) {
-          const candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((n) => isSafe(b, r, c, n))
-          if (!target || candidates.length < target.candidates.length) {
-            target = { r, c, candidates }
-          }
-        }
-      }
-    }
-
-    if (!target) return false
-
-    maxCandidates = Math.max(maxCandidates, target.candidates.length)
-
-    for (let n of target.candidates) {
-      guessCount++
-      const copy = cloneBoard(b)
-      copy[target.r][target.c] = n
-      if (logicalSolve(copy).solved) {
-        return true
-      }
-    }
-
-    return false
-  }
-
-  const solved = tryGuess(cloneBoard(board))
-
-  return {
-    solved,
-    guessCount,
-    maxCandidates,
   }
 }
 

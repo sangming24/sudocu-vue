@@ -52,3 +52,10 @@ export function checkBoardSafety(board) {
 export function isPossibleByBoard(board, row, col, num) {
   return isSafe(board, row, col, num)
 }
+
+// board 에 채워진 숫자 갯수
+export function countGivens(board) {
+  let count = 0
+  for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (board[r][c] !== null) count++
+  return count
+}

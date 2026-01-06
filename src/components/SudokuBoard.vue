@@ -8,7 +8,7 @@
           <option value="easy">쉬움</option>
           <option value="medium">보통</option>
           <option value="hard">어려움</option>
-          <option value="expert">극한</option>
+          <option value="veryHard">매우 어려움</option>
         </select>
         <button @click="startGame" :disabled="isGenerating">
           {{ isGenerating ? '생성 중...' : '게임 시작' }}
@@ -162,6 +162,9 @@ function handleWorkerResult(result) {
       board[i][j] = puzzle[i][j]
       solution[i][j] = solved[i][j]
     }
+
+  console.table(board)
+  console.log('중복 체크:', checkBoardSafety(board) ? '중복 없음 ✅' : '중복 있음 ❌')
 }
 
 function setCellInput(el, i, j) {
@@ -195,9 +198,6 @@ async function startGame() {
     type: 'GENERATE',
     difficulty: difficulty.value,
   })
-
-  console.table(board)
-  console.log('중복 체크:', checkBoardSafety(board) ? '중복 없음 ✅' : '중복 있음 ❌')
 }
 
 function handleKey(e, i, j) {
