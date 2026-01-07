@@ -121,7 +121,7 @@ const isComplete = ref(false)
 const cellInputs = ref(Array.from({ length: 9 }, () => Array(9).fill(null)))
 
 const sudoku = useSudoku()
-const { isGenerating } = useSudokuWorker()
+const { generate, isGenerating } = useSudokuWorker()
 
 const board = reactive(Array.from({ length: 9 }, () => Array(9).fill(null)))
 const solution = reactive(Array.from({ length: 9 }, () => Array(9).fill(null)))
@@ -130,42 +130,6 @@ const userBoard = reactive(
     Array.from({ length: 9 }, () => ({ value: null, candidates: [] })),
   ),
 )
-
-let worker = null
-
-function initWorker() {
-  if (worker) worker.terminate()
-
-  worker = new Worker(new URL('../workers/sudokuWorker.js', import.meta.url), {
-    type: 'module',
-  })
-
-  worker.onmessage = (e) => {
-    const { type, result } = e.data
-
-    if (type === 'RESULT') {
-      handleWorkerResult(result)
-    }
-  }
-}
-
-function handleWorkerResult(result) {
-  if (!result) {
-    console.warn('퍼즐 생성 실패')
-    return
-  }
-
-  const { puzzle, solution: solved } = result
-
-  for (let i = 0; i < 9; i++)
-    for (let j = 0; j < 9; j++) {
-      board[i][j] = puzzle[i][j]
-      solution[i][j] = solved[i][j]
-    }
-
-  console.table(board)
-  console.log('중복 체크:', checkBoardSafety(board) ? '중복 없음 ✅' : '중복 있음 ❌')
-}
 
 function setCellInput(el, i, j) {
   if (el) {
@@ -192,12 +156,23 @@ async function startGame() {
       userBoard[i][j] = { value: null, candidates: [] }
     }
 
-  initWorker()
+  try {
+    const result = await generate(difficulty.value)
+    if (!result) return
 
-  worker.postMessage({
-    type: 'GENERATE',
-    difficulty: difficulty.value,
-  })
+    const { puzzle, solution: solved } = result
+
+    for (let i = 0; i < 9; i++)
+      for (let j = 0; j < 9; j++) {
+        board[i][j] = puzzle[i][j]
+        solution[i][j] = solved[i][j]
+      }
+
+    console.table(board)
+    console.log('중복 체크:', checkBoardSafety(board) ? '중복 없음 ✅' : '중복 있음 ❌')
+  } catch (err) {
+    console.log('퍼즐 생성 실패', err)
+  }
 }
 
 function handleKey(e, i, j) {
@@ -672,13 +647,24 @@ td.related {
 } */
 .mode-select {
   margin: 0 5px;
-  padding: 5px 10px;
+  height: 30px; /* 버튼과 높이 통일 */
+  padding: 0 10px; /* 위아래 padding 제거 */
+  font-size: 14px;
+  line-height: 30px;
   border-radius: 6px;
   border: 1px solid #ccc;
-  font-size: 14px;
   background-color: #f8f9fa;
   cursor: pointer;
-  transition: all 0.2s;
+  appearance: none; /* 기본 화살표 제거 (중요) */
+
+  background-image:
+    linear-gradient(45deg, transparent 50%, #555 50%),
+    linear-gradient(135deg, #555 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) 55%,
+    calc(100% - 11px) 55%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
 }
 
 .mode-select:focus {

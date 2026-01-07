@@ -1,18 +1,20 @@
 import { generateByLogic } from '@/sudoku/generator'
 
 self.onmessage = (e) => {
-  const { difficulty } = e.data
+  const { type, difficulty } = e.data
 
   try {
-    const result = generateByLogic(difficulty)
+    if (type === 'GENERATE') {
+      const result = generateByLogic(difficulty)
 
-    self.postMessage({
-      ok: true,
-      result,
-    })
+      self.postMessage({
+        type: 'RESULT',
+        result,
+      })
+    }
   } catch (err) {
     self.postMessage({
-      ok: false,
+      type: 'ERROR',
       error: err?.message ?? 'generator error',
     })
   }
