@@ -119,9 +119,10 @@ function evaluatePuzzleDifficulty(puzzle) {
 
 function generateByLogic(difficulty) {
   let tries = 0
+  const MAX_TRIES = difficulty === 'veryHard' ? 300 : 200
 
   const tm0 = performance.now()
-  while (tries < 200) {
+  while (tries < MAX_TRIES) {
     tries++
 
     // 1. 보드 초기화
@@ -136,6 +137,20 @@ function generateByLogic(difficulty) {
 
     // 4. 난이도 조건 검사
     if (matchDifficulty(result, difficulty)) {
+      if (difficulty === 'veryHard') {
+        const nonSingle =
+          result.techniquesUsed.NakedPair +
+          result.techniquesUsed.NakedTriple +
+          result.techniquesUsed.Pointing +
+          result.techniquesUsed.Claiming +
+          result.techniquesUsed.XWing +
+          result.techniquesUsed.TwoStringKite +
+          result.techniquesUsed.Skyscraper +
+          result.techniquesUsed.WWing
+
+        if (nonSingle < 2) continue
+      }
+
       const tm1 = performance.now()
       console.log(
         '생성 시간 : ',
@@ -200,7 +215,7 @@ function generatePuzzleWithRollback({ board, solution, difficulty }) {
 
     removed++
 
-    if (difficulty === 'veryHard') {
+    if (difficulty === 'veryHard' && removed >= 45) {
       const evalResult = logicalSolve(cloneBoard(board))
       if (hasAdvancedTechnique(evalResult)) {
         break
