@@ -200,10 +200,9 @@ function generatePuzzleWithRollback({ board, solution, difficulty }) {
 
     removed++
 
-    // veryHard: 고급 기법이 너무 늦게까지 안 나오면 중단
     if (difficulty === 'veryHard') {
       const evalResult = logicalSolve(cloneBoard(board))
-      if (!hasAdvancedTechnique(evalResult)) {
+      if (hasAdvancedTechnique(evalResult)) {
         break
       }
     }
