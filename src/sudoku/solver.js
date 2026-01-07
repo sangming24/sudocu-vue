@@ -730,12 +730,6 @@ function applyWWingSB(sb) {
   return changed
 }
 
-function snapshotSB(sb) {
-  return sb
-    .map((row) => row.map((c) => (c.value ? c.value : `(${c.candidates.join('')})`)).join(','))
-    .join('|')
-}
-
 /* ------------------------------------------------------------------
  * Main Solver
  * ------------------------------------------------------------------ */
@@ -770,55 +764,45 @@ export function logicalSolve(board) {
     WWing: 0,
   }
 
-  let prevSnap = ''
+  let steps = 0
+  const MAX_STEPS = 500
 
-  while (true) {
-    const snap = snapshotSB(sb)
-    if (snap === prevSnap) break // ⭐ 무한 루프 차단
-    prevSnap = snap
+  while (steps++ < MAX_STEPS) {
+    let changed = false
 
     if (applyNakedSinglesSB(sb)) {
       techniquesUsed.NakedSingle++
-      continue
-    }
-    if (applyHiddenSinglesSB(sb)) {
+      changed = true
+    } else if (applyHiddenSinglesSB(sb)) {
       techniquesUsed.HiddenSingle++
-      continue
-    }
-    if (applyNakedPairsSB(sb)) {
+      changed = true
+    } else if (applyNakedPairsSB(sb)) {
       techniquesUsed.NakedPair++
-      continue
-    }
-    if (applyNakedTriplesSB(sb)) {
+      changed = true
+    } else if (applyNakedTriplesSB(sb)) {
       techniquesUsed.NakedTriple++
-      continue
-    }
-    if (applyPointingPairSB(sb)) {
+      changed = true
+    } else if (applyPointingPairSB(sb)) {
       techniquesUsed.Pointing++
-      continue
-    }
-    if (applyClaimingPairSB(sb)) {
+      changed = true
+    } else if (applyClaimingPairSB(sb)) {
       techniquesUsed.Claiming++
-      continue
-    }
-    if (applyXWingSB(sb)) {
+      changed = true
+    } else if (applyXWingSB(sb)) {
       techniquesUsed.XWing++
-      continue
-    }
-    if (applyTwoStringKiteSB(sb)) {
+      changed = true
+    } else if (applyTwoStringKiteSB(sb)) {
       techniquesUsed.TwoStringKite++
-      continue
-    }
-    if (applySkyscraperSB(sb)) {
+      changed = true
+    } else if (applySkyscraperSB(sb)) {
       techniquesUsed.Skyscraper++
-      continue
-    }
-    if (applyWWingSB(sb)) {
+      changed = true
+    } else if (applyWWingSB(sb)) {
       techniquesUsed.WWing++
-      continue
+      changed = true
     }
 
-    break
+    if (!changed) break
   }
 
   const order = [
