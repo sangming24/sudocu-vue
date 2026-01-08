@@ -3,6 +3,18 @@
 import { shuffle, cloneBoard, isSafe } from './utils'
 import { logicalSolve } from './solver'
 
+// 난이도별 목표 빈칸 범위
+const BLANK_TARGET_RANGE = {
+  easy: [36, 44],
+  medium: [44, 52],
+  hard: [50, 56],
+  veryHard: [52, 60],
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
 function solveRandom(board) {
   for (let r = 0; r < 9; r++) {
     for (let c = 0; c < 9; c++) {
@@ -153,7 +165,7 @@ function generateByLogic(difficulty) {
 
       const tm1 = performance.now()
       console.log(
-        '생성 시간 : ',
+        `${difficulty} 생성 시간 : `,
         ((tm1 - tm0) / 1000).toFixed(3),
         's, 시도 횟수 : ',
         tries,
@@ -162,12 +174,23 @@ function generateByLogic(difficulty) {
       )
       console.log('퍼즐 생성 성공', result)
       return { puzzle: board, solution }
+    } else {
+      const tm1 = performance.now()
+      console.log(
+        `${difficulty} 생성 시간 : `,
+        ((tm1 - tm0) / 1000).toFixed(3),
+        's, 시도 횟수 : ',
+        tries,
+        ' 빈칸 수 : ',
+        removed,
+      )
+      console.log('퍼즐 생성 난이도 조절', result)
     }
   }
 
   if (tries >= 200) {
     const tm1 = performance.now()
-    console.log('생성 시간 : ', ((tm1 - tm0) / 1000).toFixed(3), 's')
+    console.log(`${difficulty} 생성 시간 : `, ((tm1 - tm0) / 1000).toFixed(3), 's')
     console.log('퍼즐 생성 실패 → fallback')
     return null
   }
@@ -175,6 +198,10 @@ function generateByLogic(difficulty) {
 
 function generatePuzzleWithRollback({ board, solution, difficulty }) {
   solveRandom(board)
+
+  // 난이도별 목표 빈칸 수 결정
+  const [minBlank, maxBlank] = BLANK_TARGET_RANGE[difficulty]
+  const targetBlank = randInt(minBlank, maxBlank)
 
   // solution 저장
   for (let i = 0; i < 9; i++) for (let j = 0; j < 9; j++) solution[i][j] = board[i][j]
@@ -215,11 +242,17 @@ function generatePuzzleWithRollback({ board, solution, difficulty }) {
 
     removed++
 
-    if (difficulty === 'veryHard' && removed >= 45) {
-      const evalResult = logicalSolve(cloneBoard(board))
-      if (hasAdvancedTechnique(evalResult)) {
-        break
+    // 목표 빈칸 수 도달 시 종료
+    if (removed >= targetBlank) {
+      // veryHard는 고급 기법 최소 1회 보장
+      if (difficulty === 'veryHard') {
+        const evalResult = logicalSolve(cloneBoard(board))
+        if (!hasAdvancedTechnique(evalResult)) {
+          // 아직 고급 기법 안 나왔으면 계속 제거
+          continue
+        }
       }
+      break
     }
 
     // 시간 폭주 방지
