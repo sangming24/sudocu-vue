@@ -558,8 +558,11 @@ tr:nth-child(6) td {
 
 td.selected {
   background-color: #cfe2ff;
+}
+td.selected .cell {
   box-shadow: inset 0 0 0 2px #4a90ff;
 }
+
 td.problem {
   font-weight: bold;
 }
