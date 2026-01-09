@@ -103,7 +103,15 @@
 
       <div v-if="isComplete" class="success-overlay">
         <div class="confetti">
-          <span v-for="n in 24" :key="n"></span>
+          <span
+            v-for="n in 24"
+            :key="n"
+            :style="{
+              left: `${Math.random() * 100}%`,
+              '--speed': Math.random(),
+              '--h': Math.random() * 360,
+            }"
+          ></span>
         </div>
         <div class="success-box">
           <h2>🎉 완료!</h2>
