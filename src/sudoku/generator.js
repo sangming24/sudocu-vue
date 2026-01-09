@@ -174,17 +174,6 @@ function generateByLogic(difficulty) {
       )
       console.log('퍼즐 생성 성공', result)
       return { puzzle: board, solution }
-    } else {
-      const tm1 = performance.now()
-      console.log(
-        `${difficulty} 생성 시간 : `,
-        ((tm1 - tm0) / 1000).toFixed(3),
-        's, 시도 횟수 : ',
-        tries,
-        ' 빈칸 수 : ',
-        removed,
-      )
-      console.log('퍼즐 생성 난이도 조절', result)
     }
   }
 
