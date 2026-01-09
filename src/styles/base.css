@@ -221,6 +221,23 @@ h2 {
 }
 
 .cell__value {
+  transition: transform 0.12s ease;
+}
+
+.cell:not(.is-problem) .cell__value {
+  animation: cell-pop 0.15s ease-out;
+}
+
+@keyframes cell-pop {
+  from {
+    transform: scale(0.85);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.cell__value {
   font-size: clamp(14px, 2.8vw, 20px);
   font-weight: bold;
   color: var(--c-primary);
@@ -267,6 +284,17 @@ h2 {
   border-radius: 2px;
 }
 
+.cell__memo span {
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    transform 0.12s ease;
+}
+
+.cell__memo span.is-memo-highlighted {
+  transform: scale(1.05);
+}
+
 /* =====================================================
    Cell States
 ===================================================== */
@@ -301,6 +329,11 @@ h2 {
 .board.is-paused .cell.is-error {
   background: transparent !important;
   box-shadow: none !important;
+}
+
+.board.is-paused::after {
+  backdrop-filter: blur(2px);
+  letter-spacing: 0.08em;
 }
 
 .is-locked {
@@ -390,6 +423,23 @@ h2 {
   z-index: 1000;
 }
 
+.success-overlay {
+  animation: overlay-fade 0.25s ease-out;
+}
+
+@keyframes overlay-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.success-box {
+  animation: success-pop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
 .success-box {
   background: var(--c-surface);
   color: var(--c-text);
@@ -447,4 +497,24 @@ h2 {
     width: 4px;
     height: 4px;
   }
+}
+
+/* ======================================
+   Interactions / Motion
+====================================== */
+
+button,
+.mode-select,
+.tracker-item,
+.cell {
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.08s ease;
+}
+
+button:active,
+.tracker-item:active {
+  transform: scale(0.96);
 }
