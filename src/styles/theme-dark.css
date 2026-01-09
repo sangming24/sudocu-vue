@@ -1,207 +1,83 @@
+/* =====================================================
+   Dark Theme Tokens
+===================================================== */
+
+/* 시스템 다크 + data-theme 없을 때 */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    /* 🔥 data-theme='dark' 와 동일한 변수 */
     color-scheme: dark;
 
     --c-primary: #4dabff;
+    --c-primary-hover: #3399ff;
     --c-primary-soft: rgba(77, 171, 255, 0.28);
     --c-primary-light: rgba(77, 171, 255, 0.18);
 
     --c-bg: radial-gradient(circle at top, #181818 0%, #101010 60%, #0c0c0c 100%);
+    --c-surface: #1a1a1a;
+    --c-muted: #1e1e1e;
+    --c-surface-accent: #1f3a5c;
+
     --c-text: #e0e0e0;
+    --c-text-strong: #ffffff;
+    --c-text-inverse: #081826;
+    --c-memo-text: #b5c7ff;
 
     --c-border: rgba(255, 255, 255, 0.18);
-    --c-border-strong: rgba(255, 255, 255, 0.28);
+    --c-border-muted: rgba(255, 255, 255, 0.28);
+    --c-border-strong: rgba(255, 255, 255, 0.38);
 
     --c-error-bg: rgba(255, 80, 80, 0.22);
     --c-error-border: #ff6b6b;
+    --c-danger-text: #ffb3b3;
 
-    --c-muted: #1e1e1e;
     --c-related-bg: rgba(77, 171, 255, 0.08);
 
-    --c-memo-text: #b5c7ff;
-    --c-memo-highlight: #4dabff;
-  }
-
-  :root:not([data-theme]) .controls button {
-    background: var(--c-primary);
-    border-color: var(--c-primary);
-    color: #081826;
-  }
-
-  :root:not([data-theme]) .mode-select {
-    color-scheme: dark;
-  }
-
-  /* 🔥🔥🔥 이게 핵심 */
-  :root:not([data-theme]) body {
-    background: var(--c-bg);
-    color: var(--c-text);
+    --c-overlay-light: rgba(0, 0, 0, 0.55);
+    --c-overlay-dark: rgba(0, 0, 0, 0.75);
+    --c-focus-ring: rgba(77, 171, 255, 0.6);
   }
 }
 
 /* =====================================================
-   Dark Theme Overrides
+   Forced Dark Theme (data-theme="dark")
 ===================================================== */
 :root[data-theme='dark'] {
   color-scheme: dark;
-  /* Colors */
+
   --c-primary: #4dabff;
+  --c-primary-hover: #3399ff;
   --c-primary-soft: rgba(77, 171, 255, 0.28);
   --c-primary-light: rgba(77, 171, 255, 0.18);
 
   --c-bg: radial-gradient(circle at top, #181818 0%, #101010 60%, #0c0c0c 100%);
+  --c-surface: #1a1a1a;
+  --c-muted: #1e1e1e;
+  --c-surface-accent: #1f3a5c;
+
   --c-text: #e0e0e0;
+  --c-text-strong: #ffffff;
+  --c-text-inverse: #081826;
+  --c-memo-text: #b5c7ff;
 
   --c-border: rgba(255, 255, 255, 0.18);
-  --c-border-strong: rgba(255, 255, 255, 0.28);
+  --c-border-muted: rgba(255, 255, 255, 0.28);
+  --c-border-strong: rgba(255, 255, 255, 0.38);
 
   --c-error-bg: rgba(255, 80, 80, 0.22);
   --c-error-border: #ff6b6b;
+  --c-danger-text: #ffb3b3;
 
-  --c-muted: #1e1e1e;
-
-  /* Related cell */
   --c-related-bg: rgba(77, 171, 255, 0.08);
 
-  /* Memo */
-  --c-memo-text: #b5c7ff;
-  --c-memo-highlight: #4dabff;
+  --c-overlay-light: rgba(0, 0, 0, 0.55);
+  --c-overlay-dark: rgba(0, 0, 0, 0.75);
+  --c-focus-ring: rgba(77, 171, 255, 0.6);
 }
 
 /* =====================================================
-   Global
+   Global (minimal)
 ===================================================== */
 :root[data-theme='dark'] body {
   background: var(--c-bg);
   color: var(--c-text);
-}
-
-/* =====================================================
-   Controls
-===================================================== */
-:root[data-theme='dark'] .controls button {
-  background: var(--c-primary);
-  border-color: var(--c-primary);
-  color: #081826;
-}
-
-:root[data-theme='dark'] .controls button:hover {
-  background: #3399ff;
-}
-
-:root[data-theme='dark'] .mode-select {
-  color-scheme: dark;
-  background-color: #1e1e1e;
-  color: var(--c-text);
-  border-color: #444;
-
-  background-image:
-    linear-gradient(45deg, transparent 50%, #aaa 50%),
-    linear-gradient(135deg, #aaa 50%, transparent 50%);
-}
-
-:root[data-theme='dark'] .mode-select:focus {
-  border-color: var(--c-primary);
-  box-shadow: 0 0 4px rgba(77, 171, 255, 0.6);
-}
-
-/* =====================================================
-   Game Status
-===================================================== */
-:root[data-theme='dark'] .game-status button {
-  background: #1e1e1e;
-  border-color: #555;
-  color: var(--c-text);
-}
-
-/* =====================================================
-   Board Paused Overlay
-===================================================== */
-:root[data-theme='dark'] .board.is-paused::after {
-  background: rgba(0, 0, 0, 0.65);
-  color: #ddd;
-}
-
-/* =====================================================
-   Sudoku Table
-===================================================== */
-:root[data-theme='dark'] .board td {
-  border-color: var(--c-border);
-}
-
-:root[data-theme='dark'] .board td:nth-child(3),
-:root[data-theme='dark'] .board td:nth-child(6),
-:root[data-theme='dark'] .board tr:nth-child(3) td,
-:root[data-theme='dark'] .board tr:nth-child(6) td {
-  border-color: var(--c-border-strong);
-}
-
-/* =====================================================
-   Cell
-===================================================== */
-:root[data-theme='dark'] .cell__value {
-  color: #7fc1ff;
-}
-
-:root[data-theme='dark'] .cell__value.is-problem {
-  color: #e6e6e6;
-}
-
-/* =====================================================
-   Cell States
-===================================================== */
-:root[data-theme='dark'] .cell.is-selected {
-  background: var(--c-primary-soft);
-  box-shadow: inset 0 0 0 2px var(--c-primary);
-}
-
-:root[data-theme='dark'] .cell.is-highlighted {
-  background: var(--c-primary-light);
-}
-
-:root[data-theme='dark'] .cell.is-related {
-  background: var(--c-related-bg);
-}
-
-:root[data-theme='dark'] .cell.is-error {
-  background: var(--c-error-bg);
-  box-shadow: inset 0 0 0 2px var(--c-error-border);
-}
-
-:root[data-theme='dark'] .cell.is-error .cell__value {
-  color: #ffb3b3;
-}
-
-/* =====================================================
-   Tracker
-===================================================== */
-:root[data-theme='dark'] .tracker-memo {
-  background: #1e1e1e;
-  border-color: #444;
-  color: var(--c-text);
-}
-
-:root[data-theme='dark'] .tracker-memo.is-active {
-  background: var(--c-primary-soft);
-  border-color: var(--c-primary);
-}
-
-:root[data-theme='dark'] .tracker-number {
-  background: #1f3a5c;
-  color: #dce9ff;
-}
-
-:root[data-theme='dark'] .dot {
-  background: var(--c-primary);
-}
-
-/* =====================================================
-   Success Overlay
-===================================================== */
-:root[data-theme='dark'] .success-box {
-  background: linear-gradient(180deg, #242424, #1a1a1a);
-  box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }

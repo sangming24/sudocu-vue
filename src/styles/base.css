@@ -1,35 +1,47 @@
 /* =====================================================
-   Design Tokens
+   Design Tokens (Light base)
 ===================================================== */
 :root {
   color-scheme: light dark;
-  /* Colors */
+
+  /* Brand */
   --c-primary: #007bff;
+  --c-primary-hover: #0056b3;
   --c-primary-soft: #cfe2ff;
   --c-primary-light: #c1dcff;
 
+  /* Surface */
   --c-bg: #ffffff;
-  --c-text: #222;
-
-  --c-border: #aaa;
-  --c-border-strong: #000;
-
-  --c-error-bg: #fbb;
-  --c-error-border: #d00;
-
+  --c-surface: #ffffff;
   --c-muted: #f5f5f5;
+  --c-surface-accent: #d0e7ff;
+
+  /* Text */
+  --c-text: #222222;
+  --c-text-strong: #000000;
+  --c-text-inverse: #ffffff;
+  --c-memo-text: #666666;
+
+  /* Border */
+  --c-border: #aaaaaa;
+  --c-border-muted: #555555;
+  --c-border-strong: #000000;
+
+  /* State */
+  --c-error-bg: #ffbbbb;
+  --c-error-border: #dd0000;
+  --c-danger-text: #dd0000;
+  --c-related-bg: #f2f6ff;
+
+  /* Overlay / Effect */
+  --c-overlay-light: rgba(255, 255, 255, 0.65);
+  --c-overlay-dark: rgba(0, 0, 0, 0.45);
+  --c-focus-ring: rgba(0, 123, 255, 0.5);
 
   /* Radius */
   --r-sm: 4px;
   --r-md: 6px;
   --r-lg: 14px;
-
-  /* Related cell */
-  --c-related-bg: #f2f6ff;
-
-  /* Memo */
-  --c-memo-text: #666;
-  --c-memo-highlight: var(--c-primary);
 }
 
 /* =====================================================
@@ -86,13 +98,13 @@ h2 {
   border-radius: var(--r-md);
   border: 1px solid var(--c-primary);
   background: var(--c-primary);
-  color: #fff;
+  color: var(--c-text-inverse);
   font-size: 14px;
   cursor: pointer;
 }
 
 .controls button:hover {
-  background: #0056b3;
+  background: var(--c-primary-hover);
 }
 
 .mode-select {
@@ -120,7 +132,7 @@ h2 {
 .mode-select:focus {
   outline: none;
   border-color: var(--c-primary);
-  box-shadow: 0 0 3px rgba(0, 123, 255, 0.5);
+  box-shadow: 0 0 3px var(--c-focus-ring);
 }
 
 /* =====================================================
@@ -136,8 +148,9 @@ h2 {
 .game-status button {
   padding: 4px 10px;
   border-radius: var(--r-md);
-  border: 1px solid #555;
+  border: 1px solid var(--c-border-muted);
   background: var(--c-muted);
+  color: var(--c-text);
   cursor: pointer;
 }
 
@@ -157,7 +170,7 @@ h2 {
   content: '⏸ 일시정지';
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.65);
+  background: var(--c-overlay-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -214,7 +227,7 @@ h2 {
 }
 
 .cell__value.is-problem {
-  color: #000;
+  color: var(--c-text-strong);
 }
 
 .cell__input {
@@ -248,7 +261,8 @@ h2 {
 }
 
 .cell__memo span.is-memo-highlighted {
-  background: var(--c-memo-highlight);
+  background: var(--c-primary);
+  color: var(--c-text-inverse);
   font-weight: bold;
   border-radius: 2px;
 }
@@ -275,7 +289,7 @@ h2 {
 }
 
 .cell.is-error .cell__value {
-  color: red;
+  color: var(--c-danger-text);
 }
 
 /* paused 시 숨김 */
@@ -312,7 +326,8 @@ h2 {
   padding: 6px 10px;
   border-radius: var(--r-md);
   background: var(--c-muted);
-  border: 1px solid #aaa;
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
   cursor: pointer;
 }
 
@@ -340,7 +355,7 @@ h2 {
 .tracker-number {
   width: 36px;
   aspect-ratio: 1 / 1;
-  background: #d0e7ff;
+  background: var(--c-surface-accent);
   border-radius: var(--r-sm);
   display: flex;
   align-items: center;
@@ -368,7 +383,7 @@ h2 {
 .success-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--c-overlay-dark);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -376,7 +391,8 @@ h2 {
 }
 
 .success-box {
-  background: #fff;
+  background: var(--c-surface);
+  color: var(--c-text);
   padding: 24px 28px;
   border-radius: var(--r-lg);
   text-align: center;
