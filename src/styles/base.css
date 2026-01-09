@@ -228,15 +228,42 @@ h2 {
   animation: cell-pop 0.15s ease-out;
 }
 
-@keyframes cell-pop {
+.cell {
+  transition:
+    background-color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.08s ease;
+}
+
+.cell:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) {
+  .cell:hover {
+    box-shadow: inset 0 0 0 1px var(--c-border-muted);
+  }
+}
+.cell__value {
+  transition:
+    transform 0.12s ease,
+    opacity 0.12s ease;
+}
+
+.cell__value:not(.is-problem) {
+  animation: pop-in 0.12s ease-out;
+}
+
+@keyframes pop-in {
   from {
     transform: scale(0.85);
+    opacity: 0;
   }
   to {
     transform: scale(1);
+    opacity: 1;
   }
 }
-
 .cell__value {
   font-size: clamp(14px, 2.8vw, 20px);
   font-weight: bold;
@@ -302,6 +329,14 @@ h2 {
   background: var(--c-primary-soft);
   box-shadow: inset 0 0 0 2px var(--c-primary);
 }
+.cell.is-selected::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 2px var(--c-primary);
+  pointer-events: none;
+}
 
 .cell.is-highlighted {
   background: var(--c-primary-light);
@@ -347,6 +382,13 @@ h2 {
 .tracker {
   width: min(92vw, 92vh);
   max-width: 420px;
+}
+.tracker-item {
+  transition: transform 0.08s ease;
+}
+
+.tracker-item:active {
+  transform: scale(0.95);
 }
 
 .tracker-header {
@@ -433,6 +475,24 @@ h2 {
   }
   to {
     opacity: 1;
+  }
+}
+.success-box {
+  animation:
+    pop 0.35s ease-out,
+    glow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from {
+    box-shadow:
+      0 20px 40px rgba(0, 0, 0, 0.6),
+      0 0 0 rgba(77, 171, 255, 0.4);
+  }
+  to {
+    box-shadow:
+      0 20px 40px rgba(0, 0, 0, 0.6),
+      0 0 18px rgba(77, 171, 255, 0.5);
   }
 }
 
