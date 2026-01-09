@@ -24,29 +24,26 @@
         <button v-else-if="gameStatus === 'paused'" @click="resumeGame">▶ 재개</button>
       </div>
 
-      <div class="board-wrapper" :class="{ locked: isComplete, paused: isPaused }">
+      <div class="board" :class="{ 'is-locked': isComplete, 'is-paused': isPaused }">
         <table @click.stop>
           <tr v-for="(row, i) in userBoard" :key="i">
-            <td
-              v-for="(cell, j) in row"
-              :key="j"
-              :class="cellClass(i, j)"
-              @click.stop="selectCell(i, j)"
-            >
-              <div class="cell">
+            <td v-for="(cell, j) in row" :key="j" @click.stop="selectCell(i, j)">
+              <div class="cell" :class="cellClass(i, j)">
                 <!-- 문제 숫자 -->
-                <span v-if="board[i][j] !== null" class="problem">{{ board[i][j] }}</span>
+                <span v-if="board[i][j] !== null" class="cell__value is-problem">{{
+                  board[i][j]
+                }}</span>
 
                 <!-- 입력 숫자 -->
-                <span v-else-if="cell.value !== null" class="number">{{ cell.value }}</span>
+                <span v-else-if="cell.value !== null" class="cell__value">{{ cell.value }}</span>
 
                 <!-- 메모 표시 -->
-                <div v-if="cell.value === null && board[i][j] === null" class="memo-grid">
+                <div v-if="cell.value === null && board[i][j] === null" class="cell__memo">
                   <span
                     v-for="n in 9"
                     :key="n"
                     :class="{
-                      memoHighlight:
+                      'is-memo-highlighted':
                         selectedCellNumber !== null &&
                         n === selectedCellNumber &&
                         cell.candidates.includes(n),
@@ -57,6 +54,7 @@
 
                 <!-- 실제 입력 input (투명) -->
                 <input
+                  class="cell__input"
                   :ref="(el) => setCellInput(el, i, j)"
                   type="text"
                   inputmode="none"
@@ -70,12 +68,12 @@
         </table>
       </div>
 
-      <div class="tracker-wrapper">
+      <div class="tracker">
         <!-- 상단 메모 버튼 -->
         <div class="tracker-header">
           <div
             class="tracker-memo"
-            :class="{ active: isMemoMode }"
+            :class="{ 'is-active': isMemoMode }"
             @click.stop="isMemoMode = !isMemoMode"
           >
             ✏️ 메모
@@ -83,12 +81,12 @@
         </div>
 
         <!-- 트래커 영역 -->
-        <div class="tracker-container">
+        <div class="tracker-list">
           <div
             v-for="item in remainingNumbers"
             :key="item.num"
             class="tracker-item"
-            :class="{ used: item.count === 0 }"
+            :class="{ 'is-used': item.count === 0 }"
             @mousedown.prevent
             @click.stop="handleTrackerInput(item.num)"
           >
@@ -120,7 +118,9 @@
 </template>
 
 <script setup>
-import '@/styles/sudoku-board.css'
+import '@/styles/base.css'
+import '@/styles/theme-dark.css'
+
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { checkBoardSafety, isPossibleByBoard } from '@/sudoku/utils'
 import { useSudoku } from '@/composables/useSudoku'
@@ -232,6 +232,7 @@ function resumeGame() {
 
 //탭 전환 자동 일시정지
 function handleVisibilityChange() {
+  document.activeElement?.blur()
   if (document.hidden) {
     pauseGame()
   }
@@ -387,11 +388,11 @@ function cellClass(i, j) {
   }
 
   return {
-    problem: board[i][j] !== null,
-    selected: selected,
-    error: isError,
-    highlight: highlight,
-    related: related,
+    'is-problem': board[i][j] !== null,
+    'is-selected': selected,
+    'is-error': isError,
+    'is-highlighted': highlight,
+    'is-related': related,
   }
 }
 
